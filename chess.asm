@@ -1,5 +1,5 @@
 IDEAL
-MOODEL small
+MODEL small
 STACK 100h
 DATASEG
 
@@ -22,7 +22,31 @@ Bbishops db 010111b, 101111b
 Bqueen db 011111b
 Bking db 100111b
 
+Xp dw 0000h
+Yp dw 0000h
+color db 00h
+
 CODESEG
+
+proc putPixel
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov bh, 0h
+	mov cx, [Xp]
+	mov dx, [Yp]
+	mov al, [color]
+	mov ah, 0ch
+	int 10h
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp putPixel
 
 
 
@@ -32,10 +56,23 @@ start:
 	mov ax, @data
 	mov ds, ax
 	
+	mov ax, 13h
+	int 10h ; go to graphic mode
 	
+	mov [Xp], 160
+	mov [Yp], 100
+	mov [color], 28h
 	
+	call putPixel
 
 exit:
+	mov ah, 00h
+	int 16h
+	
+	
+	mov ah, 0
+	mov al, 2
+	int 10h ; back to text mode
 	mov ax, 4c00h
 	int 21h;
 END start
