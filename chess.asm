@@ -3,10 +3,10 @@ MODEL small
 STACK 100h
 DATASEG
 
-;piece pos format: (1 2) (3 4 5) (6 7 8)
-;            		/       |       | 
-;           pawn promotion file    row
-;
+;piece pos format: 1  2 (3 4 5) (6 7 8)
+;            	     /     |       | 
+;                 eaten   file    row
+;             
 
 Wpawns db 000001b, 001001b, 010001b, 011001b, 100001b, 101001b, 110001b, 111001b
 Wrooks db 000000b, 111000b
@@ -28,7 +28,7 @@ color db 00h
 
 CODESEG
 
-proc putPixel
+proc putPixel ; put a pixel of color [color] at ([Xp], [Yp])
 	push ax
 	push bx
 	push cx
@@ -49,8 +49,55 @@ proc putPixel
 endp putPixel
 
 
-
-
+proc displayBoard ; displays the chess board (without the pieces)
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov ax, 96
+	mov bx, 36
+	displayBoardTileLoop: ; loops through each tile
+			mov [Xp], ax
+			mov [Yp], bx
+			mov cx, ax
+			add cx, bx
+			sub cx, 132
+			and cx, 10000b ;checks if its a black or white tile	
+			mov cx, 0
+			mov dx, 0
+			jz whiteTile
+				mov [color], 00h ; it's black
+				jmp displayBoardPaintLoop
+			whiteTile:
+				mov [color], 0Fh ; it's white
+			
+			displayBoardPaintLoop: ;loops through each pixel
+					call putPixel
+				inc cx
+				inc [Xp]
+				cmp cx, 16
+				jb displayBoardPaintLoop
+			mov cx, 0
+			mov [Xp], ax
+			inc dx
+			inc [Yp]
+			cmp dx, 16
+			jb displayBoardPaintLoop
+		add ax, 16
+		cmp ax, 224
+		jb displayBoardTileLoop
+	mov ax, 96
+	add bx, 16
+	cmp bx, 164
+	jb displayBoardTileLoop
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp displayBoard
 
 start:
 	mov ax, @data
@@ -59,11 +106,7 @@ start:
 	mov ax, 13h
 	int 10h ; go to graphic mode
 	
-	mov [Xp], 160
-	mov [Yp], 100
-	mov [color], 28h
-	
-	call putPixel
+	call displayBoard
 
 exit:
 	mov ah, 00h
