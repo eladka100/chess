@@ -292,8 +292,21 @@ proc paintPiece
 	
 	mov [tile], al
 
-	
-	
+	mov bh, 0
+	mov bl, [piece]
+	and bl, 0Fh
+	cmp bl, 8 ; checks if it's a pawn
+	jae notPawn
+		mov al, [piece]
+		and al, 10h
+		shr al, 1
+		add bl, al
+		add bx, offset Wpromotions ; go to the correct pawn to view its promotion
+		mov ax, [bx]
+		shl ax, 1
+		add si, ax
+		mov si, [si] ; go to the correct sprite
+	notPawn:
 	
 	mov ah, 0
 	mov al, [tile]
@@ -363,6 +376,12 @@ proc paintPiece
 	ret
 endp paintPiece
 
+proc showGame
+	call displayBoard
+	mov [piece], 0
+	ret
+endp showGame
+
 start:
 	mov ax, @data
 	mov ds, ax
@@ -373,7 +392,8 @@ start:
 	call background
 	call displayBoard
 	
-	mov [piece], 0Eh
+	mov [piece], 00h
+	mov [Wpromotions], 4
 	call paintPiece
 	
 	
