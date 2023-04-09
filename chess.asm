@@ -122,7 +122,7 @@ Wbishops db 010000b, 101000b
 Wqueen db 011000b
 Wking db 100000b
 
-Bpawns db 000110b, 001110b, 010110b, 011110b, 100110b, 101110b, 110110b, 1110110b
+Bpawns db 000110b, 001110b, 010110b, 011110b, 100110b, 101110b, 110110b, 111110b
 Brooks db 000111b, 111111b
 Bknights db 001111b, 110111b
 Bbishops db 010111b, 101111b
@@ -379,6 +379,11 @@ endp paintPiece
 proc showGame
 	call displayBoard
 	mov [piece], 0
+	showGameLoop:
+		call paintPiece
+		inc [piece]
+		cmp [piece], 20h
+		jb showGameLoop
 	ret
 endp showGame
 
@@ -390,11 +395,7 @@ start:
 	int 10h ; go to graphic mode
 	
 	call background
-	call displayBoard
-	
-	mov [piece], 00h
-	mov [Wpromotions], 4
-	call paintPiece
+	call showGame
 	
 	
 
