@@ -136,6 +136,9 @@ Wpromotions db 8 dup(00h)
 Bpromotions db 8 dup (00h)
 promotionSprites dw offset Spawn, offset Srook, offset Sknight, offset Sbishop, offset Squeen
 
+Wdone2steps db 8 dup (00h)
+Bdone2steps db 8 dup (00h)
+
 Xp dw 0000h
 Yp dw 0000h
 color db 00h
@@ -296,7 +299,7 @@ proc paintPiece
 	mov bl, [piece]
 	and bl, 0Fh
 	cmp bl, 8 ; checks if it's a pawn
-	jae notPawn
+	jae dontMindPromotion
 		mov al, [piece]
 		and al, 10h
 		shr al, 1
@@ -306,7 +309,7 @@ proc paintPiece
 		shl ax, 1
 		add si, ax
 		mov si, [si] ; go to the correct sprite
-	notPawn:
+	dontMindPromotion:
 	
 	mov ah, 0
 	mov al, [tile]
@@ -387,6 +390,180 @@ proc showGame
 	ret
 endp showGame
 
+proc emptyTile ; activates the zero flag if [tile] doesn't contain piece of ah color
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov al, ah
+	shl al, 4
+	mov ah, 0
+	mov bx, offset Wpawns
+	add bx, ax
+	mov cx, 0
+	emptyTileLoop: ; loop through every piece of the color
+		mov cl, [bx]
+		cmp cl, [tile]
+		je isntEmpty ; if the piece is on [tile] then the tile isnt empty
+	inc bx
+	inc ch
+	cmp ch, 8
+	jb emptyTileLoop
+	
+	mov ax, 0
+	jmp emptyTileEnd
+	isntEmpty:
+		mov ax, 1
+	emptyTileEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp emptyTile
+
+proc legalMove ; activates the zero flag if the move of [piece] to [tile] is legal
+	push ax
+	push bx
+	push cx
+	push dx
+	mov al, [tile]
+	push ax
+	
+	mov ah, 0
+	mov al, [piece]
+	mov bx, offset Wpawns
+	add bx, ax 
+	mov ah, al
+	and al, 0Fh
+	shr ah, 6
+	; al is the piece and ah is the color of the piece
+	
+	mov dl, [bx]
+	and dl, 40h
+	jnz legalMoveHelp ; if the piece is eaten then the move isn't legal
+	
+	mov cl, [bx]
+	mov ch, [bx]
+	shr ch, 3
+	and cl, 7
+	; ch is file of piece and cl is row of [piece]
+	mov dl, [tile]
+	mov dh, [tile]
+	shr dh, 3
+	and dl, 7
+	; dh is file of piece and dl is row of [tile]
+	
+	call emptyTile
+	legalMoveHelp:
+	jnz isntLegal1 ; if [tile] has a piece of the same color then the move is ilegal
+	
+	cmp al, 08h
+	jae notPawn
+		; the piece is a pawn or a promoted pawn
+		mov bx, 0
+		mov bl, ah
+		shl bl, 3
+		add bl, al
+		add bx, offset Wpromotions
+		mov bl, [bx]
+		cmp bl, 1
+		je isRook
+		cmp bl, 2
+		je isKnight
+		cmp bl, 3
+		je isBishop
+		cmp bl, 4
+		je isQueen
+		; the piece is an unpromoted pawn
+		cmp ch, dh
+		jne notForward
+			; the move is forward
+			xor ah, 1
+			call emptyTile 
+			jnz isntLegal1 ; pawns can't eat forward
+			xor ah, 1
+			shl ah, 1
+			add dl, ah
+			dec dl ; white pawns walk upward and black pawns walk downward 
+			cmp cx, dx
+			je isLegal1 ; the move is one step toward the other side
+			; the move is more than 1 step foward
+			add dl, ah
+			dec dl
+			cmp cx, dx
+			jne isntLegal1 ; the move is more than 2 steps forward
+			add [tile], ah
+			dec [tile]
+			shr ah, 1
+			call emptyTile
+			jnz isntLegal1 ; allay piece is in the way
+			xor ah, 1
+			call emptyTile
+			jnz isntLegal1 ; enemy piece is in the way
+			xor ah, 1
+			jz whitePawn 
+				cmp cl, 6
+				jne isntLegal1 ; pawns can only move twice from starting position
+				jmp isLegal1
+			whitePawn:
+				cmp cl, 1
+				jne isntLegal1 ; pawns can only move twice from starting position
+				jmp isLegal1
+		
+		notForward:
+			shl ah, 1
+			add dl, ah
+			dec dl
+			cmp cl, dl
+			jne 
+	isLegal1:
+		jmp isLegal
+	isntLegal1:
+		jmp isntLegal
+	notPawn:
+	cmp al, 0Ah
+	jae notRook
+	isRook:
+		
+	notRook:
+	cmp al, 0Ch
+	jae notKnight
+	isKnight:
+	
+	notKnight:
+	cmp al, 0Eh
+	jae notBishop
+	isBishop:
+	
+	notBishop:
+	cmp al, 0Fh
+	je isKing
+	isQueen: 
+		
+	isKing:
+		
+	
+	
+	
+	isntLegal:
+		mov ax, 1
+		jmp legalMoveEnd
+	isLegal:
+		mov ax, 0
+	legalMoveEnd:
+	and ax, 1
+	pop ax
+	mov [tile], al
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp legalMove
+
 start:
 	mov ax, @data
 	mov ds, ax
@@ -394,10 +571,19 @@ start:
 	mov ax, 13h
 	int 10h ; go to graphic mode
 	
-	call background
+	
+	
+	mov [Bpawns+1], 000010b
 	call showGame
 	
-	
+	mov [piece], 0
+	mov [tile], 000010b
+	call legalMove
+	jnz exit
+	mov [Xp], 10
+	mov [Yp], 10
+	mov [color], 03h
+	call putPixel
 
 exit:
 	mov ah, 00h
