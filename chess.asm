@@ -521,7 +521,7 @@ proc LegalMovePawn
 	pop dx
 	pop cx
 	pop bx
-	pop bx
+	pop ax
 	ret
 endp LegalMovePawn
 
@@ -591,7 +591,7 @@ proc LegalMoveRook
 	pop dx
 	pop cx
 	pop bx
-	pop bx
+	pop ax
 	ret
 endp LegalMoveRook
 
@@ -623,7 +623,7 @@ proc LegalMoveKnight
 	pop dx
 	pop cx
 	pop bx
-	pop bx
+	pop ax
 	ret
 endp LegalMoveKnight
 
@@ -635,15 +635,14 @@ proc LegalMoveBishop
 	
 	sub cl, dl
 	sub ch, dh
-	mov ah, 0
-	mov al, cl
-	idiv ch
-	cmp ax, 1
+	cmp cl, ch
 	je bishopUp
 		; the move isnt the / diagonal
-		cmp ax, 00FFh
+		neg cl
+		cmp cl, ch
 		jne isntLegalBishop ; the move is not a diagonal
 		; the move is the \ diagonal
+		neg cl
 		cmp cl, 0
 		jl bishopDownRight
 			; the move is up left
@@ -697,7 +696,7 @@ proc LegalMoveBishop
 	pop dx
 	pop cx
 	pop bx
-	pop bx
+	pop ax
 	ret
 endp LegalMoveBishop
 
@@ -710,10 +709,10 @@ proc LegalMoveQueen
 	mov al, [tile]
 	push ax
 	call LegalMoveBishop
-	jz isLegalQueen ; the queen moves diagonally
 	pop ax
+	jz isLegalQueen ; the queen moves diagonally
 	mov [tile], al
-	call isLegalRook
+	call legalMoveRook
 	jz isLegalQueen ; the queen moves in straight lines
 	
 	isntLegalQueen:
@@ -726,7 +725,7 @@ proc LegalMoveQueen
 	pop dx
 	pop cx
 	pop bx
-	pop bx
+	pop ax
 	ret
 endp LegalMoveQueen
 
@@ -758,7 +757,7 @@ proc LegalMoveKing
 	pop dx
 	pop cx
 	pop bx
-	pop bx
+	pop ax
 	ret
 endp LegalMoveKing
 
@@ -878,11 +877,11 @@ start:
 	int 10h ; go to graphic mode
 	
 	
-	mov [Wknights], 010010b
+	mov [WQueen], 010010b
 	call showGame
 	
-	mov [piece], 10
-	mov [targetTile], 011100b
+	mov [piece], 0Eh
+	mov [targetTile], 100100b
 	call legalMove
 	jnz exit
 	mov [Xp], 10
