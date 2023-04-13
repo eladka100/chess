@@ -136,8 +136,8 @@ Wpromotions db 8 dup(00h)
 Bpromotions db 8 dup (00h)
 promotionSprites dw offset Spawn, offset Srook, offset Sknight, offset Sbishop, offset Squeen
 
-Wdone2steps db 8 dup (00h)
-Bdone2steps db 8 dup (00h)
+WmovedTwice db 8 dup (00h)
+BmovedTwice db 8 dup (00h)
 
 Xp dw 0000h
 Yp dw 0000h
@@ -150,6 +150,7 @@ color db 00h
 ;               color  piece num
 ;  
 piece db 00h
+targetTile db 00h
 tile db 00h
 
 
@@ -424,13 +425,350 @@ proc emptyTile ; activates the zero flag if [tile] doesn't contain piece of ah c
 	ret
 endp emptyTile
 
+proc LegalMovePawn
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	cmp ch, dh
+	jne notForward
+		; the move is forward
+		xor ah, 1
+		call emptyTile 
+		jnz isntLegalPawnHelp ; pawns can't eat forward
+		xor ah, 1
+		shl ah, 1
+		add dl, ah
+		dec dl ; white pawns walk upward and black pawns walk downward 
+		cmp cx, dx
+		je isLegalPawnHelp ; the move is one step toward the other side
+		; the move is more than 1 step foward
+		add dl, ah
+		dec dl
+		cmp cx, dx
+		jne isntLegalPawnHelp ; the move is more than 2 steps forward
+		add [tile], ah
+		dec [tile]
+		shr ah, 1
+		call emptyTile
+		jnz isntLegalPawn ; allay piece is in the way
+		xor ah, 1
+		call emptyTile
+		jnz isntLegalPawn ; enemy piece is in the way
+		xor ah, 1
+		jz whitePawn 
+			cmp cl, 6
+			jne isntLegalPawn ; pawns can only move twice from starting position
+			jmp isLegalPawn
+		whitePawn:
+			cmp cl, 1
+			jne isntLegalPawn ; pawns can only move twice from starting position
+			jmp isLegalPawn
+	
+	
+	isLegalPawnHelp:
+		jmp isLegalPawn
+	isntLegalPawnHelp:
+		jmp isntLegalPawn
+	
+		notForward:
+			shl ah, 1
+			add dl, ah
+			dec dl
+			cmp cl, dl
+			jne isntLegalPawn ; the move isnt to the next row
+			sub dh, ch
+			cmp dh, 0
+			jl PawnToLeft
+				cmp dh, 1
+				jne isntLegalPawn ; the move isnt to the file right from the pawn
+				jmp legalMovePawnCon				
+			PawnToLeft:
+				cmp dh, -1
+				jne isntLegalPawn ; the move isnt to the file left from the pawn
+				jmp legalMovePawnCon
+			
+			legalMovePawnCon:
+			shr ah, 1
+			xor ah, 1
+			call emptyTile
+			jnz isLegalPawn ; pawns can move one squere diagonaly if there's an enemy there
+			; now check for en passant
+			mov bx, offset WmovedTwice
+			shl ah, 3
+			add bl, ah
+			add bl, ch
+			add bl, dh
+			mov al, [bx]
+			cmp al, 1
+			jne isntLegalPawn ; the correct pawn didnt move twice before
+			shr ah, 3
+			xor ah, 1
+			neg ah
+			add ah, 4
+			cmp cl, ah
+			jne isntLegalPawn ; not near the en passant pawn
+			je isLegalPawn ; it is en passant
+		
+	isntLegalPawn:
+		mov ax, 1
+		jmp legalMovePawnEnd
+	isLegalPawn:
+		mov ax, 0
+	legalMovePawnEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop bx
+	ret
+endp LegalMovePawn
+
+proc LegalMoveRook
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	cmp cl, dl
+	je rookHorizontal
+		; the move isnt horizonatl
+		cmp ch, dh
+		jne isntLegalRook ; the move is not straight
+		; the move is vertical
+		cmp cl, dl
+		jb rookUp
+			; the move is down
+			mov bl, 1
+			mov bh, cl
+			sub bh, dl
+			jmp legalMoveRookCon
+		rookUp:
+			; the move is up
+			mov bl, -1
+			mov bh, dl
+			sub bh, cl
+			jmp legalMoveRookCon
+	rookHorizontal:
+		cmp ch, dh
+		jb rookRight
+			; the move is left
+			mov bl, 8
+			mov bh, ch
+			sub bh, dh
+			jmp legalMoveRookCon
+		rookRight:
+			; the move is right
+			mov bl, -8
+			mov bh, dh
+			sub bh, ch
+			jmp legalMoveRookCon
+			
+	legalMoveRookCon:
+	; now adding bl to [tile] move tile towards the piece's position 
+	; and bh is the number of times it needed to be added so that [tile] is the piece's tile
+	rookLoop:
+		add [tile], bl
+		dec bh
+		cmp bh, 0
+		je isLegalRook ; the loop ended in success because tile reached thh piece
+		mov ah, 0
+		call emptyTile
+		jnz isntLegalRook ; something white is in the way
+		mov ah, 1
+		call emptyTile
+		jnz isntLegalRook ; something black is in the way
+		jmp rookLoop
+	
+	isntLegalRook:
+		mov ax, 1
+		jmp legalMoveRookEnd
+	isLegalRook:
+		mov ax, 0
+	legalMoveRookEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop bx
+	ret
+endp LegalMoveRook
+
+proc LegalMoveKnight
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	; basically check the distance from the piece to the target tile using pythagoras's theorem
+	sub cl, dl
+	sub ch, dh
+	mov al, cl
+	imul cl
+	mov bx, ax
+	mov al, ch
+	imul ch
+	add bx, ax
+	cmp bx, 5
+	je isLegalKnight
+	
+	isntLegalKnight:
+		mov ax, 1
+		jmp legalMoveKnightEnd
+	isLegalKnight:
+		mov ax, 0
+	legalMoveKnightEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop bx
+	ret
+endp LegalMoveKnight
+
+proc LegalMoveBishop
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	sub cl, dl
+	sub ch, dh
+	mov ah, 0
+	mov al, cl
+	idiv ch
+	cmp ax, 1
+	je bishopUp
+		; the move isnt the / diagonal
+		cmp ax, 00FFh
+		jne isntLegalBishop ; the move is not a diagonal
+		; the move is the \ diagonal
+		cmp cl, 0
+		jl bishopDownRight
+			; the move is up left
+			mov bl, 7
+			mov bh, cl
+			jmp legalMoveBishopCon
+		bishopDownRight:
+			; the move is down right
+			mov bl, -7
+			mov bh, cl
+			neg bh
+			jmp legalMoveBishopCon
+	bishopUp:
+		; the move is the / diagonal
+		cmp cl, 0
+		jl bishopUpRight
+			; the move is down left
+			mov bl, 9
+			mov bh, cl
+			jmp legalMoveBishopCon
+		bishopUpRight:
+			; the move is up right
+			mov bl, -9
+			mov bh, cl
+			neg bh
+			jmp legalMoveBishopCon
+			
+	legalMoveBishopCon:
+	; now adding bl to [tile] move tile towards the piece's position 
+	; and bh is the number of times it needed to be added so that [tile] is the piece's tile
+	bishopLoop:
+		add [tile], bl
+		dec bh
+		cmp bh, 0
+		je isLegalBishop ; the loop ended in success because tile reached thh piece
+		mov ah, 0
+		call emptyTile
+		jnz isntLegalBishop ; something white is in the way
+		mov ah, 1
+		call emptyTile
+		jnz isntLegalBishop ; something black is in the way
+		jmp bishopLoop
+	
+	isntLegalBishop:
+		mov ax, 1
+		jmp legalMoveBishopEnd
+	isLegalBishop:
+		mov ax, 0
+	legalMoveBishopEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop bx
+	ret
+endp LegalMoveBishop
+
+proc LegalMoveQueen
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov al, [tile]
+	push ax
+	call LegalMoveBishop
+	jz isLegalQueen ; the queen moves diagonally
+	pop ax
+	mov [tile], al
+	call isLegalRook
+	jz isLegalQueen ; the queen moves in straight lines
+	
+	isntLegalQueen:
+		mov ax, 1
+		jmp legalMoveQueenEnd
+	isLegalQueen:
+		mov ax, 0
+	legalMoveQueenEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop bx
+	ret
+endp LegalMoveQueen
+
+proc LegalMoveKing
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	sub cl, dl
+	sub ch, dh
+	cmp cl, 1
+	jg isntLegalKing ; the move is too down
+	cmp cl, -1
+	jl isntLegalKing ; th move is too up
+	cmp ch, 1
+	jg isntLegalKing ; the move is too left
+	cmp ch, -1
+	jl isntLegalKing ; th move is too right
+	jmp isLegalKing
+	
+	isntLegalKing:
+		mov ax, 1
+		jmp legalMoveKingEnd
+	isLegalKing:
+		mov ax, 0
+	legalMoveKingEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop bx
+	ret
+endp LegalMoveKing
+
 proc legalMove ; activates the zero flag if the move of [piece] to [tile] is legal
 	push ax
 	push bx
 	push cx
 	push dx
-	mov al, [tile]
-	push ax
+	mov al, [targetTile]
+	mov [tile], al
 	
 	mov ah, 0
 	mov al, [piece]
@@ -458,7 +796,7 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 	
 	call emptyTile
 	legalMoveHelp:
-	jnz isntLegal1 ; if [tile] has a piece of the same color then the move is ilegal
+	jnz isntLegal ; if [tile] has a piece of the same color then the move is ilegal
 	
 	cmp al, 08h
 	jae notPawn
@@ -478,73 +816,42 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 		cmp bl, 4
 		je isQueen
 		; the piece is an unpromoted pawn
-		cmp ch, dh
-		jne notForward
-			; the move is forward
-			xor ah, 1
-			call emptyTile 
-			jnz isntLegal1 ; pawns can't eat forward
-			xor ah, 1
-			shl ah, 1
-			add dl, ah
-			dec dl ; white pawns walk upward and black pawns walk downward 
-			cmp cx, dx
-			je isLegal1 ; the move is one step toward the other side
-			; the move is more than 1 step foward
-			add dl, ah
-			dec dl
-			cmp cx, dx
-			jne isntLegal1 ; the move is more than 2 steps forward
-			add [tile], ah
-			dec [tile]
-			shr ah, 1
-			call emptyTile
-			jnz isntLegal1 ; allay piece is in the way
-			xor ah, 1
-			call emptyTile
-			jnz isntLegal1 ; enemy piece is in the way
-			xor ah, 1
-			jz whitePawn 
-				cmp cl, 6
-				jne isntLegal1 ; pawns can only move twice from starting position
-				jmp isLegal1
-			whitePawn:
-				cmp cl, 1
-				jne isntLegal1 ; pawns can only move twice from starting position
-				jmp isLegal1
-		
-		notForward:
-			shl ah, 1
-			add dl, ah
-			dec dl
-			cmp cl, dl
-			jne 
-	isLegal1:
-		jmp isLegal
-	isntLegal1:
-		jmp isntLegal
+		call LegalMovePawn
+		jz isLegal
+		jnz isntLegal
+	
 	notPawn:
 	cmp al, 0Ah
 	jae notRook
 	isRook:
-		
+		call LegalMoveRook
+		jz isLegal
+		jnz isntLegal
 	notRook:
 	cmp al, 0Ch
 	jae notKnight
 	isKnight:
-	
+		call LegalMoveKnight
+		jz isLegal
+		jnz isntLegal
 	notKnight:
 	cmp al, 0Eh
 	jae notBishop
 	isBishop:
-	
+		call LegalMoveBishop
+		jz isLegal
+		jnz isntLegal
 	notBishop:
 	cmp al, 0Fh
 	je isKing
 	isQueen: 
-		
+		call LegalMoveQueen
+		jz isLegal
+		jnz isntLegal
 	isKing:
-		
+		call LegalMoveKing
+		jz isLegal
+		jnz isntLegal
 	
 	
 	
@@ -555,13 +862,12 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 		mov ax, 0
 	legalMoveEnd:
 	and ax, 1
-	pop ax
-	mov [tile], al
 	pop dx
 	pop cx
 	pop bx
 	pop ax
 	ret
+	
 endp legalMove
 
 start:
@@ -572,12 +878,11 @@ start:
 	int 10h ; go to graphic mode
 	
 	
-	
-	mov [Bpawns+1], 000010b
+	mov [Wknights], 010010b
 	call showGame
 	
-	mov [piece], 0
-	mov [tile], 000010b
+	mov [piece], 10
+	mov [targetTile], 011100b
 	call legalMove
 	jnz exit
 	mov [Xp], 10
