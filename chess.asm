@@ -108,6 +108,8 @@ Sking db "tttttttttttttttt"
 		
 sprites dw 8 dup(offset promotionSprites), 2 dup(offset Srook), 2 dup(offset Sknight), 2 dup(offset Sbishop), offset Squeen, offset Sking
 
+
+promotionSprites dw offset Spawn, offset Srook, offset Sknight, offset Sbishop, offset Squeen
 ;piece pos format: 1  2 (3 4 5) (6 7 8)
 ;            	     /     |       | 
 ;                 eaten   file    row
@@ -134,15 +136,22 @@ Bking db 100111b
 
 Wpromotions db 8 dup(00h)
 Bpromotions db 8 dup (00h)
-promotionSprites dw offset Spawn, offset Srook, offset Sknight, offset Sbishop, offset Squeen
 
 WmovedTwice db 8 dup (00h)
 BmovedTwice db 8 dup (00h)
+
+WsmallCastle db 00h
+BsmallCastle db 00h
+WbigCastle db 00h
+BbigCastle db 00h
+
 
 Xp dw 0000h
 Yp dw 0000h
 color db 00h
 
+Xmouse dw 0000h
+Ymouse dw 0000h
 
 ;piece numbers: 0-7 - pawn, 8-9 - rook, A-B - knight, C-D - bishop, E - queen, F - king
 ;piece format: 1 2 3 4 (5 6 7 8)
@@ -176,6 +185,27 @@ proc putPixel ; put a pixel of color [color] at ([Xp], [Yp])
 	ret
 endp putPixel
 
+proc readPixel ; put a pixel of color [color] at ([Xp], [Yp])
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov cx, [Xp]
+	mov dx, [Yp]
+	mov bh, 0h
+	mov ah, 0dh
+	int 10h
+	mov [color], al
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp readPixel
+
+
 
 proc displayBoard ; displays the chess board (without the pieces)
 	push ax
@@ -184,7 +214,7 @@ proc displayBoard ; displays the chess board (without the pieces)
 	push dx
 	
 	mov ax, 96
-	mov bx, 36
+	mov bx, 36	
 	displayBoardTileLoop: ; loops through each tile
 			mov [Xp], ax
 			mov [Yp], bx
@@ -317,7 +347,7 @@ proc paintPiece
 	shr ax, 3 ; only look at the file
 	shl ax, 4 ; multiply by 16 because the tile size is 16 px
 	add ax, 96 ; add the offset of the board
-	mov [Xp], ax ; this is the X coordinate of the left corner of the piece
+	mov [Xp], ax ; this is the X coordinate of the up left corner of the piece
 	mov cx, ax ; save the X coordinate
 	
 	mov ah, 0
@@ -326,7 +356,7 @@ proc paintPiece
 	shl ax, 4 ; multiply by 16 because the tile size is 16 px
 	neg ax ; the rows are in bottom to top but the coordinates are from top to bottom
 	add ax, 148 ; add the offset of the board
-	mov [Yp], ax ; this is the Y coordinate of the left corner of the piece
+	mov [Yp], ax ; this is the Y coordinate of the up left corner of the piece
 	
 	
 	mov ax, 0
@@ -343,7 +373,6 @@ proc paintPiece
 	
 	paintPieceHelp:
 	jmp paintPieceEnd
-	
 	
 			insidePiece: ; if it's a pixel in the inside of the piece
 				mov bl, [piece]
@@ -381,6 +410,7 @@ proc paintPiece
 endp paintPiece
 
 proc showGame
+	call background
 	call displayBoard
 	mov [piece], 0
 	showGameLoop:
@@ -409,7 +439,7 @@ proc emptyTile ; activates the zero flag if [tile] doesn't contain piece of ah c
 		je isntEmpty ; if the piece is on [tile] then the tile isnt empty
 	inc bx
 	inc ch
-	cmp ch, 8
+	cmp ch, 16
 	jb emptyTileLoop
 	
 	mov ax, 0
@@ -734,18 +764,106 @@ proc LegalMoveKing
 	push bx
 	push cx
 	push dx
+	push di
+	
+	mov di, offset Wpawns
+	mov bl, [piece]
+	mov bh, 0
+	add di, bx
+	mov bx, [di]
+	push bx
+	push di ; push the king's pointer and the king's position
+	
+	mov bl, [piece]
+	mov bh, [targetTile]
+	push bx
 	
 	sub cl, dl
 	sub ch, dh
 	cmp cl, 1
-	jg isntLegalKing ; the move is too down
+	jg isntLegalKingHelp ; the move is too down
 	cmp cl, -1
-	jl isntLegalKing ; th move is too up
+	jl isntLegalKingHelp ; th move is too up
 	cmp ch, 1
-	jg isntLegalKing ; the move is too left
+	jg bigCastle ; the move is too left
 	cmp ch, -1
-	jl isntLegalKing ; th move is too right
-	jmp isLegalKing
+	jl smallCastle ; th move is too right
+	jmp isLegalKingHelp
+	
+	bigCastle:
+		;check if big castle is legal
+		mov bx, offset WbigCastle
+		add bl, ah
+		cmp [byte ptr bx], 0
+		jne isntLegalKingHelp ; rook or king moved
+		shl ah, 4
+		mov [piece], 8
+		add [piece], ah
+		add [targetTile], 8
+		call legalMove
+		jnz isntLegalKingHelp ; the squers between the king in the rook aren't empty because the rook can't move to the king
+		pop bx
+		mov [piece], bl
+		push bx ; retrive the original piece
+		mov bx, 0
+		mov bl, [piece]
+		add bx, offset Wpawns
+		shr ah, 4
+		call inCheck
+		jz isntLegalKingHelp ; checked king cant castle
+		sub [byte ptr bx], 8
+		call inCheck
+		jz isntLegalKingHelp 
+		sub [byte ptr bx], 8
+		call inCheck
+		jz isntLegalKing 
+		sub [byte ptr bx], 8
+		call inCheck
+		jz isntLegalKing ; no tiles can be threatend in the castling
+		sub [byte ptr bx], 8
+		call inCheck
+		jz isntLegalKing ; the rook cant be threatend in the castling
+		jmp isLegalKing
+	
+	isLegalKingHelp:
+		jmp isLegalKing
+	isntLegalKingHelp:
+		jmp isntLegalKing
+	
+	smallCastle:
+		;check if big castle is legal
+		mov bx, offset WsmallCastle
+		add bl, ah
+		cmp [byte ptr bx], 0
+		jne isntLegalKing ; rook or king moved
+		shl ah, 4
+		mov [piece], 9
+		add [piece], ah
+		sub [targetTile], 8
+		call legalMove
+		jnz isntLegalKing ; the squers between the king in the rook aren't empty
+		mov [piece], 0Fh
+		add [piece], ah
+		pop bx
+		mov [piece], bl
+		push bx ; retrive the original piece
+		shr ah, 4
+		call inCheck
+		jz isntLegalKing ; checked king cant castle
+		add [byte ptr bx], 8
+		call inCheck
+		jz isntLegalKing 
+		add [byte ptr bx], 8
+		call inCheck
+		jz isntLegalKing ; no tiles can be threatend in the castling
+		add [byte ptr bx], 8
+		call inCheck
+		jz isntLegalKing ; the rook cant be threatend in the castling
+		jmp isLegalKing
+	
+	
+	
+		
 	
 	isntLegalKing:
 		mov ax, 1
@@ -753,7 +871,16 @@ proc LegalMoveKing
 	isLegalKing:
 		mov ax, 0
 	legalMoveKingEnd:
+	pop bx
+	mov [piece], bl
+	mov [targetTile], bh
+	
 	and ax, 1
+	pop di
+	pop bx
+	mov [di], bx
+	
+	pop di
 	pop dx
 	pop cx
 	pop bx
@@ -775,7 +902,7 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 	add bx, ax 
 	mov ah, al
 	and al, 0Fh
-	shr ah, 6
+	shr ah, 4
 	; al is the piece and ah is the color of the piece
 	
 	mov dl, [bx]
@@ -795,7 +922,7 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 	
 	call emptyTile
 	legalMoveHelp:
-	jnz isntLegal ; if [tile] has a piece of the same color then the move is ilegal
+	jnz isntLegalMove ; if [tile] has a piece of the same color then the move is ilegal
 	
 	cmp al, 08h
 	jae notPawn
@@ -816,48 +943,48 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 		je isQueen
 		; the piece is an unpromoted pawn
 		call LegalMovePawn
-		jz isLegal
-		jnz isntLegal
+		jz isLegalMove
+		jnz isntLegalMove
 	
 	notPawn:
 	cmp al, 0Ah
 	jae notRook
 	isRook:
 		call LegalMoveRook
-		jz isLegal
-		jnz isntLegal
+		jz isLegalMove
+		jnz isntLegalMove
 	notRook:
 	cmp al, 0Ch
 	jae notKnight
 	isKnight:
 		call LegalMoveKnight
-		jz isLegal
-		jnz isntLegal
+		jz isLegalMove
+		jnz isntLegalMove
 	notKnight:
 	cmp al, 0Eh
 	jae notBishop
 	isBishop:
 		call LegalMoveBishop
-		jz isLegal
-		jnz isntLegal
+		jz isLegalMove
+		jnz isntLegalMove
 	notBishop:
 	cmp al, 0Fh
 	je isKing
 	isQueen: 
 		call LegalMoveQueen
-		jz isLegal
-		jnz isntLegal
+		jz isLegalMove
+		jnz isntLegalMove
 	isKing:
 		call LegalMoveKing
-		jz isLegal
-		jnz isntLegal
+		jz isLegalMove
+		jnz isntLegalMove
 	
 	
 	
-	isntLegal:
+	isntLegalMove:
 		mov ax, 1
 		jmp legalMoveEnd
-	isLegal:
+	isLegalMove:
 		mov ax, 0
 	legalMoveEnd:
 	and ax, 1
@@ -866,28 +993,417 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 	pop bx
 	pop ax
 	ret
+endp legalMove 
 	
-endp legalMove
+proc inCheck ; checks if the king of color ah is in check
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov bx, offset Wking
+	shl ah, 4
+	add bl, ah ; find the king of the correct color
+	mov al, [bx]
+	mov [targetTile], al ; the target tile is the king's tile
+	mov [piece], 10h
+	xor [piece], ah ; the pieces checking are of the opposite color
+	mov cx, 16
+	inCheckLoop:
+		call legalMove
+		jz check
+		inc [piece]
+		loop inCheckLoop
+	; for each piece of the opposite color, check if it can move to the king's tile
+	
+	safe:
+		mov ax, 1
+		jmp inCheckEnd
+	check:
+		mov ax, 0
+	inCheckEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp inCheck
+
+proc resetMovedTwice
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov bx, 0
+	shl ah, 4
+	mov bl, ah
+	add bx, offset WmovedTwice
+	mov cx, 8
+	resetMovedTwiceLoop:
+		mov [byte ptr bx], 0
+		inc bx
+		loop resetMovedTwiceLoop
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp resetMovedTwice
+
+proc doMove
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	call resetMovedTwice ; reset the [XmovedTwice] to to avoid en passants more than one turn after moving twice
+	
+	mov al, [piece]
+	mov ah, [piece]
+	and al, 0Fh ; al is the piece itself
+	shr ah, 4 ; ah is the color of the piece
+	cmp al, 8
+	jae notPawnMoveHelp
+		; toggle [W/BmovedTwice]
+		mov bx, 0
+		mov bl, [piece]
+		add bx, offset Wpawns
+		mov cl, [bx]
+		and cl, 7
+		mov ch, [targetTile]
+		and ch, 7
+		sub cl, ch
+		add cl, 2
+		and cl, 11b
+		jnz doEnPassant ; the move is not 2 steps so check if it's an en passan
+		mov bx, offset WmovedTwice
+		shl ah, 3
+		add bl, ah
+		add bl, al
+		mov [byte ptr bx], 1
+		jmp doMoveEnd
+		
+	notPawnMoveHelp:
+		jmp notPawnMove
+	
+		doEnPassant:
+			mov bx, 0
+			mov bl, [piece]
+			add bx, offset Wpawns
+			mov cl, [bx]
+			shr cl, 3
+			mov ch, [targetTile]
+			shr ch, 3
+			cmp cl, ch
+			je doMoveEndHelp ; the move is not diagonal
+			shr ah, 3
+			xor ah, 1
+			mov al, [targetTile]
+			mov [tile], al
+			call emptyTile
+			jnz doMoveEndHelp ; move is just normal eating
+			mov bx, offset Wpawns
+			shl ah, 4
+			add bl, 16
+			sub bl, ah
+			shr al, 3
+			add bl, al ; point bx to the pawn of the opposite color of the same file as the target tile
+			or [byte ptr bx], 40h ; eat that pawn
+			jmp doMoveEnd
+			
+	notPawnMove:
+	cmp al, 0Ah
+	jae notRookMove
+		cmp al, 8
+		je moveLeftRook
+			; cant do small castling
+			mov bx, offset WsmallCastle
+			add bl, ah
+			mov [byte ptr bx], 1
+			jmp doMoveEnd
+		moveLeftRook:
+			; cant do big castling
+			mov bx, offset WbigCastle
+			add bl, ah
+			mov [byte ptr bx], 1
+			jmp doMoveEnd
+	
+	doMoveEndHelp:
+		jmp doMoveEnd
+	
+	notRookMove:
+	cmp al, 0Fh
+	jne doMoveEnd
+		; cant do castling at all after this move
+		mov [WsmallCastle], 1
+		mov [BsmallCastle], 1
+		mov [WbigCastle], 1
+		mov [BbigCastle], 1
+		mov bx, 0
+		mov bl, [piece]
+		add bx, offset Wpawns
+		mov cl, [bx]
+		shr cl, 3
+		mov ch, [targetTile]
+		shr ch, 3
+		sub cl, ch
+		cmp cl, 2
+		je doBigCastling
+		cmp cl, -2
+		je doSmallCastling
+		jmp doMoveEnd
+		
+		doBigCastling:
+			mov bx, offset Wrooks
+			shl ah, 4
+			add bl, ah
+			add [byte ptr bx], 18h
+			jmp doMoveEnd
+		doSmallCastling:
+			mov bx, offset Wrooks+1
+			shl ah, 4
+			add bl, ah
+			sub [byte ptr bx], 10h		
+		
+	doMoveEnd:
+	mov bx, offset Wpawns
+	mov cx, 32
+	doMoveLoop:
+		mov al, [bx]
+		cmp al, [targetTile]
+		je eat
+		inc bx
+		loop doMoveLoop
+	jmp doMoveCon
+	; for each piece if its in the target tile, eat it
+	
+	eat:
+		or [byte ptr bx], 40h
+	
+	doMoveCon:
+	mov bx, 0
+	mov bl, [piece]
+	add bx, offset Wpawns
+	mov al, [targetTile]
+	mov [bx], al ; move the moved piece to the targeted tile
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp doMove
+
+proc legalTurn
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	call legalMove
+	jnz isntLegalTurn
+	mov cx, 34
+	mov bx, offset Wpawns
+	legalTurnPushLoop:
+		push [word ptr bx]
+		add bx, 2
+		loop legalTurnPushLoop
+	; push the state of the board to the stack
+	call doMove
+	mov ah, [piece]
+	shr ah, 4
+	call inCheck ; check if the king of the 
+	jnz isLegalTurn
+	
+	
+	isntLegalTurn:
+		mov ax, 1
+		jmp inCheckEnd
+	isLegalTurn:
+		mov ax, 0
+	legalTurnEnd:
+	mov cx, 34
+	mov bx, offset BbigCastle
+	legalTurnPopLoop:
+		pop [word ptr bx]
+		sub bx, 2
+		loop legalTurnPopLoop
+	; pop the state of the board from the stack
+	
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp legalTurn
+
+proc config
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov ax, ds
+	mov es, ax
+
+	mov ax, 13h
+	int 10h ; go to graphic mode
+	
+	mov ax, 0h
+	int 33h ; enables mouse
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp config
+
+proc useMouse
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov ax, 1
+	int 33h ; show mouse
+	
+	useMouseLoop:
+		mov ax, 3
+		int 33h
+		shr cx, 1
+		cmp bl, 1
+		jne useMouseLoop ; check the mouse's status until it's pressed
+	mov [Xmouse], cx
+	mov [Ymouse], dx
+	
+	mov ax, 2
+	int 33h ; hide mouse
+	
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp useMouse
+	
+proc selectTile
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	selectTileLoop: ; loop continues until the mouse is pressed inside the board
+		call useMouse
+		mov cx, [Xmouse]
+		mov dx, [Ymouse]
+		cmp cx, 96
+		jb selectTileLoop ; press is too left
+		cmp cx, 224
+		jae selectTileLoop ; press is too right
+		cmp dx, 36
+		jb selectTileLoop ; press is too up
+		cmp dx, 164
+		jae selectTileLoop ; press is too down
+	
+	mov bl, 16
+	sub cx, 96
+	sub dx, 36
+	shr cx, 4
+	shl cx, 3
+	shr dx, 4
+	neg dx
+	add dx, 7
+	mov [tile], cl
+	add [tile], dl
+	
+	call markTile
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp selectTile
+
+proc markTile
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov ah, 0
+	mov al, [tile]
+	shr ax, 3 ; only look at the file
+	shl ax, 4 ; multiply by 16 because the tile size is 16 px
+	add ax, 96 ; add the offset of the board
+	mov [Xp], ax ; this is the X coordinate of the up left corner of the tile
+	mov cx, ax ; save the X coordinate
+	
+	mov ah, 0
+	mov al, [tile]
+	and ax, 7 ; look at the row
+	shl ax, 4 ; multiply by 16 because the tile size is 16 px
+	neg ax ; the rows are in bottom to top but the coordinates are from top to bottom
+	add ax, 148 ; add the offset of the board
+	mov [Yp], ax ; this is the Y coordinate of the up left corner of the tile
+	
+	mov dx, 0
+	markTileLoop:
+			call readPixel
+			cmp [color], 0Fh
+			jne notWhitePixel
+				mov [color], 58h
+				jmp markTileCon
+			notWhitePixel:
+			cmp [color], 16h
+			jne blackPixel
+				mov [color], 70h
+				jmp markTileCon
+			blackPixel:
+				mov [color], 28h
+				jmp markTileCon
+			
+			markTileCon:
+			call putPixel
+		inc [Xp]
+		inc dl
+		cmp dl, 16
+		jne markTileLoop
+	mov [Xp], cx
+	mov dl, 0
+	inc [Yp]
+	inc dh
+	cmp dh, 16
+	jne markTileLoop
+		
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp markTile
 
 start:
 	mov ax, @data
 	mov ds, ax
 	
-	mov ax, 13h
-	int 10h ; go to graphic mode
+	call config
 	
-	
-	mov [WQueen], 010010b
+	mov [Xp], 16
+	mov [Yp], 16
+	mov [color], 0Fh
 	call showGame
+	mov [tile], 010000b
+	mov ax, 3
 	
-	mov [piece], 0Eh
-	mov [targetTile], 100100b
-	call legalMove
-	jnz exit
-	mov [Xp], 10
-	mov [Yp], 10
-	mov [color], 03h
-	call putPixel
+	call selectTile
+	;call showGame
 
 exit:
 	mov ah, 00h
