@@ -1203,8 +1203,6 @@ proc legalTurn
 	push cx
 	push dx
 	
-	call legalMove
-	jnz isntLegalTurn
 	mov cx, 34
 	mov bx, offset Wpawns
 	legalTurnPushLoop:
@@ -1212,6 +1210,9 @@ proc legalTurn
 		add bx, 2
 		loop legalTurnPushLoop
 	; push the state of the board to the stack
+	
+	call legalMove
+	jnz isntLegalTurn
 	call doMove
 	mov ah, [piece]
 	shr ah, 4
@@ -1221,15 +1222,15 @@ proc legalTurn
 	
 	isntLegalTurn:
 		mov ax, 1
-		jmp inCheckEnd
+		jmp legalTurnEnd
 	isLegalTurn:
 		mov ax, 0
 	legalTurnEnd:
 	mov cx, 34
-	mov bx, offset BbigCastle
+	mov bx, offset Wpawns+68
 	legalTurnPopLoop:
-		pop [word ptr bx]
 		sub bx, 2
+		pop [word ptr bx]
 		loop legalTurnPopLoop
 	; pop the state of the board from the stack
 	
@@ -1389,21 +1390,106 @@ proc markTile
 	ret
 endp markTile
 
+proc selectPiece ; select a piece of ah color
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov al, ah
+	shl al, 4
+	selectPieceLoop: ; loop until a piece of ah is selected
+		call showGame
+		call selectTile
+		mov ah, 0
+		mov bx, ax
+		add bx, offset Wpawns
+		mov cx, 16
+		mov [piece], ah
+		selectPieceLoop2: ; loop through all of the pieces of ah and check if they are in the tile selected
+			mov ah, [bx]
+			cmp [tile], ah
+			je selectPieceEnd
+			inc bx
+			inc [piece]
+			loop selectPieceLoop2
+		jmp selectPieceLoop
+	
+	selectPieceEnd:
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp selectPiece
+
+proc inMate ; check if ah player is in mate (cant do a legal turn)
+	push ax
+	push bx
+	push cx
+	push dx
+	mov bl, [targetTile]
+	mov bh, [piece]
+	push bx
+	
+	shl ah, 4
+	mov bl, ah
+	mov al, 0
+	mov cx, 16
+	inMateLoop: ; loop through every piece-tile pair and check if it's a legal turn
+			mov [targetTile], al
+			mov [piece], bl
+			call legalTurn
+			jz able
+			inc bl
+			loop inMateLoop
+		mov cx, 16
+		mov bl, ah
+		inc al
+		cmp al, 64
+		jne inMateLoop
+	jmp mate
+	
+	able:
+		mov ax, 1
+		jmp inMateEnd
+	mate:
+		mov ax, 0
+	inMateEnd:
+	and ax, 1
+	pop ax
+	mov [targetTile], al
+	mov [piece], ah
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp inMate
+
+
 start:
 	mov ax, @data
 	mov ds, ax
 	
 	call config
 	
-	mov [Xp], 16
-	mov [Yp], 16
-	mov [color], 0Fh
+	mov [Wqueen], 101110b
+	or [Bpawns+5], 40h
+	or [Bqueen], 40h
+	mov [Wbishops], 110101b
 	call showGame
-	mov [tile], 010000b
-	mov ax, 3
 	
-	call selectTile
-	;call showGame
+	mov ah, 1
+	call inMate
+	;mov [piece], 0
+	;mov [targetTile], 000011b
+	;call legalTurn
+	jnz exit
+	mov [Xp], 10
+	mov [Yp], 10
+	mov [color], 0Fh
+	call putPixel
 
 exit:
 	mov ah, 00h
