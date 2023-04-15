@@ -163,6 +163,18 @@ targetTile db 00h
 tile db 00h
 
 
+promoMenu db 0Bh, 24, "rook knight bishop queen"
+promoMenu2 db 0Bh, 24," 1     2      3      4   "
+WwinStr db 0Fh, 11, "white wins!"
+BwinStr db 0Fh, 11, "black wins!"
+drawStr db 16h, 4, "draw"
+
+Xstr db 00h
+Ystr db 00h
+
+String dw 0000h
+
+
 CODESEG
 
 proc putPixel ; put a pixel of color [color] at ([Xp], [Yp])
@@ -1202,6 +1214,9 @@ proc legalTurn
 	push bx
 	push cx
 	push dx
+	mov al, [piece]
+	mov ah, [targetTile]
+	push ax
 	
 	mov cx, 34
 	mov bx, offset Wpawns
@@ -1235,6 +1250,9 @@ proc legalTurn
 	; pop the state of the board from the stack
 	
 	and ax, 1
+	pop ax
+	mov [piece], al
+	mov [targetTile], ah
 	pop dx
 	pop cx
 	pop bx
@@ -1248,8 +1266,8 @@ proc config
 	push cx
 	push dx
 	
-	mov ax, ds
-	mov es, ax
+	push ds
+	pop es
 
 	mov ax, 13h
 	int 10h ; go to graphic mode
@@ -1270,6 +1288,11 @@ proc useMouse
 	push cx
 	push dx
 	
+	mov ax, 4
+	mov cx, 0
+	mov dx, 0
+	int 33h ; reset mouse position to (0, 0)
+	
 	mov ax, 1
 	int 33h ; show mouse
 	
@@ -1284,7 +1307,6 @@ proc useMouse
 	
 	mov ax, 2
 	int 33h ; hide mouse
-	
 	
 	pop dx
 	pop cx
@@ -1405,7 +1427,7 @@ proc selectPiece ; select a piece of ah color
 		mov bx, ax
 		add bx, offset Wpawns
 		mov cx, 16
-		mov [piece], ah
+		mov [piece], al
 		selectPieceLoop2: ; loop through all of the pieces of ah and check if they are in the tile selected
 			mov ah, [bx]
 			cmp [tile], ah
@@ -1422,6 +1444,28 @@ proc selectPiece ; select a piece of ah color
 	pop ax
 	ret
 endp selectPiece
+
+proc selectMove
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	selectMoveLoop: ; loop until a legal move of ah is selected
+		call showGame
+		call selectPiece
+		call selectTile
+		mov al, [tile]
+		mov [targetTile], al
+		call legalTurn
+		jnz selectMoveLoop
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp selectMove
 
 proc inMate ; check if ah player is in mate (cant do a legal turn)
 	push ax
@@ -1467,34 +1511,181 @@ proc inMate ; check if ah player is in mate (cant do a legal turn)
 	ret
 endp inMate
 
+proc checkmate
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	call inCheck
+	jnz notCheckmated
+	call inMate
+	jz checkmated
+	
+	notCheckmated:
+		mov ax, 1
+		jmp checkmateEnd
+	checkmated:
+		mov ax, 0
+	checkmateEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp checkmate
+
+proc stalemate
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	call inCheck
+	jz notStalemated
+	call inMate
+	jz stalemated
+	
+	notStalemated:
+		mov ax, 1
+		jmp checkmateEnd
+	stalemated:
+		mov ax, 0
+	stalematedEnd:
+	and ax, 1
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp stalemate
+
+proc printStr
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov bp, [String]
+	mov bl, [ds:bp]
+	mov bh, 0
+	inc bp
+	mov cl, [ds:bp]
+	mov ch, 0
+	inc bp
+	mov dl, [Xstr]
+	mov dh, [Ystr]
+	mov ax, 1300h
+	int 10h
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp printStr
+
+proc turn
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	call selectMove
+	call doMove
+	; now check if you should promote
+	mov al, [piece]
+	and al, 0Fh
+	cmp al, 8
+	jae turnEnd ; not a pawn
+	mov al, [targetTile]
+	and al, 7
+	sub al, ah
+	inc al
+	and al, 7
+	jnz turnEnd ; not at the other end of the board
+	; print the promotion menu
+	mov [Xstr], 8
+	mov [Ystr], 1
+	mov [String], offset promoMenu
+	call printStr
+	inc [Ystr]
+	mov [String], offset promoMenu2
+	call printStr
+	;promotion
+	mov bh, 0
+	mov bl, [piece]
+	and bx, 7
+	mov al, ah
+	shl al, 3
+	mov ah, 0
+	add bx, ax
+	add bx, offset Wpromotions
+	
+	promotionLoop: ; loop until a valid key is pressed
+		mov ah, 00h
+		int 16h
+		sub al, 30h
+		cmp al, 1
+		jb promotionLoop ; ASCII code too low
+		cmp al, 4
+		ja promotionLoop ; ASCII code too high
+	
+	mov [bx], al ; promote
+	
+	turnEnd:
+	call showGame
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp turn
 
 start:
 	mov ax, @data
 	mov ds, ax
 	
 	call config
-	
-	mov [Wqueen], 101110b
-	or [Bpawns+5], 40h
-	or [Bqueen], 40h
-	mov [Wbishops], 110101b
 	call showGame
+	mov ah, 0
 	
-	mov ah, 1
-	call inMate
-	;mov [piece], 0
-	;mov [targetTile], 000011b
-	;call legalTurn
-	jnz exit
-	mov [Xp], 10
-	mov [Yp], 10
-	mov [color], 0Fh
-	call putPixel
-
+	mainLoop:
+		call checkmate
+		jz someoneWon
+		call stalemate
+		jz draw
+		call turn
+		xor ah, 1
+		jmp mainLoop
+		
+	someoneWon:
+		cmp ah, 0
+		je blackWins
+		whiteWins:
+			mov [Xstr], 14
+			mov [Ystr], 2
+			mov [String], offset WwinStr
+			call printStr
+			jmp exit
+		blackWins:
+			mov [Xstr], 14
+			mov [Ystr], 2
+			mov [String], offset BwinStr
+			call printStr
+			jmp exit
+			
+	draw:
+		mov [Xstr], 18
+		mov [Ystr], 2
+		mov [String], offset drawStr
+		call printStr
+		
+	
 exit:
 	mov ah, 00h
 	int 16h
-	
 	
 	mov ah, 0
 	mov al, 2
