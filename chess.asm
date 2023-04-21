@@ -5,6 +5,8 @@ DATASEG
 
 ; piece sprite format: t - transparent, b - border, a - inside
 
+
+
 Spawn db "tttttttttttttttt"
 	  db "ttttttbbbbtttttt"
 	  db "tttttbaaaabttttt"
@@ -686,16 +688,16 @@ proc LegalMoveBishop
 		; the move is the \ diagonal
 		neg cl
 		cmp cl, 0
-		jl bishopDownRight
+		jg bishopDownRight
 			; the move is up left
 			mov bl, 7
 			mov bh, cl
+			neg bh
 			jmp legalMoveBishopCon
 		bishopDownRight:
 			; the move is down right
 			mov bl, -7
 			mov bh, cl
-			neg bh
 			jmp legalMoveBishopCon
 	bishopUp:
 		; the move is the / diagonal
@@ -1048,11 +1050,8 @@ proc resetMovedTwice
 	push cx
 	push dx
 	
-	mov bx, 0
-	shl ah, 4
-	mov bl, ah
-	add bx, offset WmovedTwice
-	mov cx, 8
+	mov bx, offset WmovedTwice
+	mov cx, 16
 	resetMovedTwiceLoop:
 		mov [byte ptr bx], 0
 		inc bx
@@ -1117,12 +1116,12 @@ proc doMove
 			mov [tile], al
 			call emptyTile
 			jnz doMoveEndHelp ; move is just normal eating
-			mov bx, offset Wpawns
+			mov bx, 0
 			shl ah, 4
-			add bl, 16
-			sub bl, ah
+			add bl, ah
 			shr al, 3
 			add bl, al ; point bx to the pawn of the opposite color of the same file as the target tile
+			add bx, offset Wpawns
 			or [byte ptr bx], 40h ; eat that pawn
 			jmp doMoveEnd
 			
@@ -1287,6 +1286,7 @@ proc useMouse
 	push bx
 	push cx
 	push dx
+	
 	
 	mov ax, 4
 	mov cx, 0
@@ -1599,6 +1599,11 @@ proc turn
 	and al, 0Fh
 	cmp al, 8
 	jae turnEnd ; not a pawn
+	mov bx, 0
+	mov bl, [piece]
+	add bx, offset Wpromotions
+	cmp [byte ptr bx], 0
+	jne turnEnd ; the piece is a promoted pawn
 	mov al, [targetTile]
 	and al, 7
 	sub al, ah
@@ -1648,9 +1653,10 @@ start:
 	mov ds, ax
 	
 	call config
-	call showGame
 	mov ah, 0
 	
+	call showGame
+	mov ah, 0
 	mainLoop:
 		call checkmate
 		jz someoneWon
@@ -1681,9 +1687,8 @@ start:
 		mov [Ystr], 2
 		mov [String], offset drawStr
 		call printStr
-		
 	
-exit:
+	exit:
 	mov ah, 00h
 	int 16h
 	
