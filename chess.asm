@@ -3,9 +3,27 @@ MODEL small
 STACK 100h
 DATASEG
 
+
+
+
+DrawButton db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 0Fh, 00h, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 00h, 00h, 0Fh, 00h, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 00h, 0Fh, 00h, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
+
 ; piece sprite format: t - transparent, b - border, a - inside
-
-
 
 Spawn db "tttttttttttttttt"
 	  db "ttttttbbbbtttttt"
@@ -170,6 +188,8 @@ promoMenu2 db 0Bh, 24," 1     2      3      4   "
 WwinStr db 0Fh, 11, "white wins!"
 BwinStr db 0Fh, 11, "black wins!"
 drawStr db 16h, 4, "draw"
+exitStr db 0Fh, 21, "press any key to exit"
+
 
 Xstr db 00h
 Ystr db 00h
@@ -425,6 +445,7 @@ endp paintPiece
 
 proc showGame
 	call background
+	call paintDrawButton
 	call displayBoard
 	mov [piece], 0
 	showGameLoop:
@@ -1302,6 +1323,19 @@ proc useMouse
 		shr cx, 1
 		cmp bl, 1
 		jne useMouseLoop ; check the mouse's status until it's pressed
+	
+	;check if the draw button is pressed
+	cmp cx, 10
+	jb useMouseEnd ; left to the button
+	cmp cx, 42
+	jae useMouseEnd ; right to the button
+	cmp dx, 10
+	jb useMouseEnd ; above the button
+	cmp dx, 26
+	jae useMouseEnd ; below to the button
+	jmp draw
+	
+	useMouseEnd:
 	mov [Xmouse], cx
 	mov [Ymouse], dx
 	
@@ -1648,15 +1682,44 @@ proc turn
 	ret
 endp turn
 
+proc paintDrawButton
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	mov [Xp], 10
+	mov [Yp], 10
+	mov bx, offset DrawButton
+	
+	paintDrawButtonLoop:
+			mov al, [bx]
+			mov [color], al
+			call putPixel
+		inc [Xp]
+		inc bx
+		cmp [Xp], 42
+		jb paintDrawButtonLoop
+	mov [Xp], 10
+	inc [Yp]
+	cmp [Yp], 26
+	jb paintDrawButtonLoop
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp paintDrawButton
+
 start:
 	mov ax, @data
 	mov ds, ax
 	
 	call config
-	mov ah, 0
-	
 	call showGame
 	mov ah, 0
+	
 	mainLoop:
 		call checkmate
 		jz someoneWon
@@ -1689,6 +1752,10 @@ start:
 		call printStr
 	
 	exit:
+	mov [String], offset exitStr
+	mov [Xstr], 9
+	mov [Ystr], 12
+	call printStr
 	mov ah, 00h
 	int 16h
 	
