@@ -193,9 +193,21 @@ exitStr db 0Fh, 21, "press any key to exit"
 
 Xstr db 00h
 Ystr db 00h
-
 String dw 0000h
 
+clock equ es:6Ch
+
+Melody dw 0000h
+natrualNotesTable dw 2A5Fh, 25E4h, 2394h, 1FB4h, 1C3Fh, 1AA2h, 17C7h
+sharpNotesTable dw 27D6h, 2394h, 2188h, 1DE0h, 1AA2h, 1931h, 1668h
+flatNotesTable dw 2CD0h, 27D6h, 25E4h, 2188h, 1DE0h, 1AA2h, 1931h
+
+startMelody db "e$12 b$12 e$12 b$22 a21 f11 g14 ", 0
+eatMelody db "a13 g03 g$04 f06 ", 0
+winningMelody db "!3 b11 b11 b11 b12 c13 b11 a13 g01 b13 d11 d11 d11 d11 b12 d11 d11 d11 d11 d11 d11 d11 e13 d11 d11 d11 d11 d11 e13 d11 a13 g01 g03 d11 d11 d11 d11 d11 e13 b11 a13 g01 g01 ", 0
+drawMelody db "b$12 e$14 e$13 c11 d14 g02 g02 c14 b$13 a$11 b$14 e$02 e$02 f04 f03 g01 a$14 a$13 b$11 c14 d12 e$12 f16 ", 0
+enPassantMelody db "e$13 f13 b$12 f13 g13 b$21 g11 e$13 f13 b$14 ", 0
+promotionMelody db "c11 e11 g11 c21 e11 g11 c21 e21 g11 c21 e21 g21 c21 e21 g21 e21 c34 ", 0
 
 CODESEG
 
@@ -1137,6 +1149,7 @@ proc doMove
 			mov [tile], al
 			call emptyTile
 			jnz doMoveEndHelp ; move is just normal eating
+			mov [Melody], offset enPassantMelody
 			mov bx, 0
 			shl ah, 4
 			add bl, ah
@@ -1214,6 +1227,7 @@ proc doMove
 	
 	eat:
 		or [byte ptr bx], 40h
+		mov [Melody], offset eatMelody
 	
 	doMoveCon:
 	mov bx, 0
@@ -1286,15 +1300,13 @@ proc config
 	push cx
 	push dx
 	
-	push ds
-	pop es
 
 	mov ax, 13h
 	int 10h ; go to graphic mode
 	
 	mov ax, 0h
 	int 33h ; enables mouse
-	
+		
 	pop dx
 	pop cx
 	pop bx
@@ -1600,6 +1612,10 @@ proc printStr
 	push bx
 	push cx
 	push dx
+	push es
+	
+	mov ax, ds
+	mov es, ax
 	
 	mov bp, [String]
 	mov bl, [ds:bp]
@@ -1613,6 +1629,7 @@ proc printStr
 	mov ax, 1300h
 	int 10h
 	
+	pop es
 	pop dx
 	pop cx
 	pop bx
@@ -1625,6 +1642,8 @@ proc turn
 	push bx
 	push cx
 	push dx
+	
+	mov [Melody], 0
 	
 	call selectMove
 	call doMove
@@ -1644,6 +1663,7 @@ proc turn
 	inc al
 	and al, 7
 	jnz turnEnd ; not at the other end of the board
+	mov [Melody], offset promotionMelody
 	; print the promotion menu
 	mov [Xstr], 8
 	mov [Ystr], 1
@@ -1675,6 +1695,10 @@ proc turn
 	
 	turnEnd:
 	call showGame
+	cmp [Melody], 0
+	je nothingHappend
+		call playMelody
+	nothingHappend:
 	pop dx
 	pop cx
 	pop bx
@@ -1712,6 +1736,146 @@ proc paintDrawButton
 	ret
 endp paintDrawButton
 
+proc gameEnd
+	push ax
+	push bx
+	push cx
+	push dx
+
+	mov [String], offset exitStr
+	mov [Xstr], 9
+	mov [Ystr], 12
+	call printStr
+	
+	
+
+	
+	mov ah, 00h
+	int 16h ; wait until a key is pressed
+	
+	mov ah, 0
+	mov al, 2
+	int 10h ; back to text mode
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp gameEnd
+
+proc playMelody
+	push ax
+	push bx
+	push cx
+	push dx
+	push es
+	push si
+	
+	mov ax, 40h
+	mov es, ax
+	
+	mov si, [Melody]
+	
+	mov dx, [clock]
+	waitForFirstTick:
+		cmp dx, [clock]
+		je waitForFirstTick
+	
+	playMelodyLoop:
+	
+		mov bl, [si]
+		cmp bl, 0
+		je melodyEndHelp ;reached the end of the melody
+		cmp bl, "!"
+		je isRest
+		
+		sub bl, 61h
+		mov bh, 0
+		inc si
+		mov al, [si]
+		cmp al, 30h
+		jae calculateOctave ; check if the note is not natrual flat or sharp
+			inc si
+			sub al, 22h
+			mov cl, 7
+			mul cl
+			add bx, ax
+			mov al, [si]
+		calculateOctave:
+		shl bx, 1
+		add bx, offset natrualNotesTable
+		mov cl, al
+		sub cl, 30h
+		mov ax, [bx]
+		shr ax, cl ; devides ax by 2 for every higher octave
+		
+		inc si
+		mov cl, [si]
+		sub cl, 30h
+		mov ch, 0 
+		shl cx, 2; cx is the number of the ticks
+		
+		push ax
+		in al, 61h
+		or al, 11b
+		out 61h, al ; turns on the speaker
+	
+		mov al, 0B6h
+		out 43h, al ; send control word to change frequency
+		pop ax
+		
+		out 42h, al ; Sending lower byte
+		mov al, ah
+		out 42h, al ; Sending upper byte
+		
+		noteDuration:
+			mov dx, [clock]
+			noteTick:
+				cmp dx, [clock]
+				je noteTick
+			loop noteDuration ; wait until the note is finished
+		
+		add si, 2
+		
+		in al, 61h
+		and al, 11111100b
+		out 61h, al ; turn of speaker
+	
+		jmp playMelodyLoop
+		
+melodyEndHelp:
+	jmp melodyEnd
+
+		isRest:
+			inc si
+			mov cl, [si]
+			sub cl, 30h
+			mov ch, 0
+			shl cx, 2
+			
+			restDuration:
+				mov dx, [clock]
+				restTick:
+					cmp dx, [clock]
+					je restTick
+				loop restDuration ; wait until the rest is finished
+			
+			add si, 2
+			jmp playMelodyLoop
+			
+		
+	melodyEnd:
+	
+	pop si
+	pop es
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp playMelody
+
 start:
 	mov ax, @data
 	mov ds, ax
@@ -1719,6 +1883,7 @@ start:
 	call config
 	call showGame
 	mov ah, 0
+	mov [Melody], offset startMelody
 	
 	mainLoop:
 		call checkmate
@@ -1732,6 +1897,7 @@ start:
 	someoneWon:
 		cmp ah, 0
 		je blackWins
+		mov [Melody], offset winningMelody
 		whiteWins:
 			mov [Xstr], 14
 			mov [Ystr], 2
@@ -1750,18 +1916,11 @@ start:
 		mov [Ystr], 2
 		mov [String], offset drawStr
 		call printStr
+		mov [Melody], offset drawMelody
 	
 	exit:
-	mov [String], offset exitStr
-	mov [Xstr], 9
-	mov [Ystr], 12
-	call printStr
-	mov ah, 00h
-	int 16h
-	
-	mov ah, 0
-	mov al, 2
-	int 10h ; back to text mode
+	call playMelody
+	call gameEnd
 	mov ax, 4c00h
 	int 21h;
 END start
