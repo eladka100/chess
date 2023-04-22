@@ -208,6 +208,7 @@ winningMelody db "!3 b11 b11 b11 b12 c13 b11 a13 g01 b13 d11 d11 d11 d11 b12 d11
 drawMelody db "b$12 e$14 e$13 c11 d14 g02 g02 c14 b$13 a$11 b$14 e$02 e$02 f04 f03 g01 a$14 a$13 b$11 c14 d12 e$12 f16 ", 0
 enPassantMelody db "e$13 f13 b$12 f13 g13 b$21 g11 e$13 f13 b$14 ", 0
 promotionMelody db "c11 e11 g11 c21 e11 g11 c21 e21 g11 c21 e21 g21 c21 e21 g21 e21 c34 ", 0
+CheckMelody db "g#31 a$01 d04 ", 0
 
 CODESEG
 
@@ -1111,6 +1112,14 @@ proc doMove
 	shr ah, 4 ; ah is the color of the piece
 	cmp al, 8
 	jae notPawnMoveHelp
+	mov bl, ah
+	shl bl, 3
+	mov bh, 0
+	add bl, al
+	add bx, offset Wpromotions
+	cmp [byte ptr bx], 0
+	jne notPawnMoveHelp ; the piece is a promoted pawn
+	
 		; toggle [W/BmovedTwice]
 		mov bx, 0
 		mov bl, [piece]
@@ -1814,7 +1823,8 @@ proc playMelody
 		mov cl, [si]
 		sub cl, 30h
 		mov ch, 0 
-		shl cx, 2; cx is the number of the ticks
+		shl cx, 2
+		sub cx, 1 ; cx is the number of the ticks
 		
 		push ax
 		in al, 61h
@@ -1841,7 +1851,12 @@ proc playMelody
 		in al, 61h
 		and al, 11111100b
 		out 61h, al ; turn of speaker
-	
+		
+		mov dx, [clock]
+		noteStop:
+			cmp dx, [clock]
+			je noteStop ; need seperation between notes
+		
 		jmp playMelodyLoop
 		
 melodyEndHelp:
@@ -1884,6 +1899,7 @@ start:
 	call showGame
 	mov ah, 0
 	mov [Melody], offset startMelody
+	call playMelody
 	
 	mainLoop:
 		call checkmate
@@ -1892,6 +1908,11 @@ start:
 		jz draw
 		call turn
 		xor ah, 1
+		call inCheck
+		jnz notInCheck
+			mov [Melody], offset CheckMelody
+			call playMelody
+		notInCheck:
 		jmp mainLoop
 		
 	someoneWon:
