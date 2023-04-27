@@ -23,6 +23,26 @@ DrawButton db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 0
 		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
 		   db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
 
+ResignButton db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 00h, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h
+		   db 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 00h, 0Fh, 00h, 0Fh, 00h
+		   db 00h, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 0Fh, 00h, 00h, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 00h, 0Fh, 00h, 0Fh, 00h, 00h, 0Fh, 00h
+		   db 00h, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h
+		   db 00h, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h, 00h, 00h, 00h, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 00h, 0Fh, 0Fh, 00h, 00h, 0Fh, 0Fh, 00h, 0Fh, 0Fh, 00h, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 0Fh, 00h
+		   db 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h, 00h
+		   
+isDraw db 00h
+isResign db 00h
+		   
 ; piece sprite format: t - transparent, b - border, a - inside
 
 Spawn db "tttttttttttttttt"
@@ -458,7 +478,7 @@ endp paintPiece
 
 proc showGame
 	call background
-	call paintDrawButton
+	call paintButtons
 	call displayBoard
 	mov [piece], 0
 	showGameLoop:
@@ -1323,52 +1343,7 @@ proc config
 	ret
 endp config
 
-proc useMouse
-	push ax
-	push bx
-	push cx
-	push dx
-	
-	
-	mov ax, 4
-	mov cx, 0
-	mov dx, 0
-	int 33h ; reset mouse position to (0, 0)
-	
-	mov ax, 1
-	int 33h ; show mouse
-	
-	useMouseLoop:
-		mov ax, 3
-		int 33h
-		shr cx, 1
-		cmp bl, 1
-		jne useMouseLoop ; check the mouse's status until it's pressed
-	
-	;check if the draw button is pressed
-	cmp cx, 10
-	jb useMouseEnd ; left to the button
-	cmp cx, 42
-	jae useMouseEnd ; right to the button
-	cmp dx, 10
-	jb useMouseEnd ; above the button
-	cmp dx, 26
-	jae useMouseEnd ; below to the button
-	jmp draw
-	
-	useMouseEnd:
-	mov [Xmouse], cx
-	mov [Ymouse], dx
-	
-	mov ax, 2
-	int 33h ; hide mouse
-	
-	pop dx
-	pop cx
-	pop bx
-	pop ax
-	ret
-endp useMouse
+
 	
 proc selectTile
 	push ax
@@ -1378,6 +1353,13 @@ proc selectTile
 	
 	selectTileLoop: ; loop continues until the mouse is pressed inside the board
 		call useMouse
+		
+		; check if a button if pressed
+		cmp [isDraw], 1
+		je selectTileEnd 
+		cmp [isResign], 1
+		je selectTileEnd 
+		
 		mov cx, [Xmouse]
 		mov dx, [Ymouse]
 		cmp cx, 96
@@ -1402,6 +1384,7 @@ proc selectTile
 	
 	call markTile
 	
+	selectTileEnd:
 	pop dx
 	pop cx
 	pop bx
@@ -1478,6 +1461,13 @@ proc selectPiece ; select a piece of ah color
 	selectPieceLoop: ; loop until a piece of ah is selected
 		call showGame
 		call selectTile
+		
+		; check if a button if pressed
+		cmp [isDraw], 1
+		je selectPieceEnd 
+		cmp [isResign], 1
+		je selectPieceEnd 
+		
 		mov ah, 0
 		mov bx, ax
 		add bx, offset Wpawns
@@ -1510,11 +1500,19 @@ proc selectMove
 		call showGame
 		call selectPiece
 		call selectTile
+		
+		; check if a button if pressed
+		cmp [isDraw], 1
+		je selectMoveEnd 
+		cmp [isResign], 1
+		je selectMoveEnd 
+		
 		mov al, [tile]
 		mov [targetTile], al
 		call legalTurn
 		jnz selectMoveLoop
 	
+	selectMoveEnd:
 	pop dx
 	pop cx
 	pop bx
@@ -1655,6 +1653,13 @@ proc turn
 	mov [Melody], 0
 	
 	call selectMove
+	
+	; check if a button if pressed
+	cmp [isDraw], 1
+	je turnEnd 
+	cmp [isResign], 1
+	je turnEnd 
+	
 	call doMove
 	; now check if you should promote
 	mov al, [piece]
@@ -1715,12 +1720,13 @@ proc turn
 	ret
 endp turn
 
-proc paintDrawButton
+proc paintButtons
 	push ax
 	push bx
 	push cx
 	push dx
 	
+	; paint the draw button
 	mov [Xp], 10
 	mov [Yp], 10
 	mov bx, offset DrawButton
@@ -1738,12 +1744,31 @@ proc paintDrawButton
 	cmp [Yp], 26
 	jb paintDrawButtonLoop
 	
+	; paint the resign button
+	
+	mov [Xp], 10
+	mov [Yp], 174
+	mov bx, offset ResignButton
+	
+	paintResignButtonLoop:
+			mov al, [bx]
+			mov [color], al
+			call putPixel
+		inc [Xp]
+		inc bx
+		cmp [Xp], 42
+		jb paintResignButtonLoop
+	mov [Xp], 10
+	inc [Yp]
+	cmp [Yp], 190
+	jb paintResignButtonLoop
+	
 	pop dx
 	pop cx
 	pop bx
 	pop ax
 	ret
-endp paintDrawButton
+endp paintButtons
 
 proc gameEnd
 	push ax
@@ -1756,8 +1781,6 @@ proc gameEnd
 	mov [Ystr], 12
 	call printStr
 	
-	
-
 	
 	mov ah, 00h
 	int 16h ; wait until a key is pressed
@@ -1891,6 +1914,65 @@ melodyEndHelp:
 	ret
 endp playMelody
 
+proc useMouse
+	push ax
+	push bx
+	push cx
+	push dx
+	
+	
+	mov ax, 4
+	mov cx, 0
+	mov dx, 0
+	int 33h ; reset mouse position to (0, 0)
+	
+	mov ax, 1
+	int 33h ; show mouse
+	
+	useMouseLoop:
+		mov ax, 3
+		int 33h
+		shr cx, 1
+		cmp bl, 1
+		jne useMouseLoop ; check the mouse's status until it's pressed
+	
+	;check if any button is pressed
+	cmp cx, 10
+	jb useMouseEnd ; left to the button
+	cmp cx, 42
+	jae useMouseEnd ; right to the button
+	
+	;check if the draw button is pressed
+	cmp dx, 10
+	jb useMouseCon ; above the button
+	cmp dx, 26
+	jae useMouseCon ; just right
+	mov [isDraw], 1
+	
+	useMouseCon:
+	;check if the resign button is pressed
+	cmp dx, 174
+	jb useMouseEnd ; above the button
+	cmp dx, 190
+	jae useMouseCon ; below the button
+	mov [isResign], 1
+	
+	
+	useMouseEnd:
+	mov [Xmouse], cx
+	mov [Ymouse], dx
+	
+	mov ax, 2
+	int 33h ; hide mouse
+	
+	pop dx
+	pop cx
+	pop bx
+	pop ax
+	ret
+endp useMouse
+
+
 start:
 	mov ax, @data
 	mov ds, ax
@@ -1907,6 +1989,13 @@ start:
 		call stalemate
 		jz draw
 		call turn
+		
+		; check if a button if pressed
+		cmp [isDraw], 1
+		je draw
+		cmp [isResign], 1
+		je someoneWon 
+		
 		xor ah, 1
 		call inCheck
 		jnz notInCheck
@@ -1914,11 +2003,14 @@ start:
 			call playMelody
 		notInCheck:
 		jmp mainLoop
-		
+	
+	drawHelp:
+		jmp draw
+	
 	someoneWon:
+		mov [Melody], offset winningMelody
 		cmp ah, 0
 		je blackWins
-		mov [Melody], offset winningMelody
 		whiteWins:
 			mov [Xstr], 14
 			mov [Ystr], 2
