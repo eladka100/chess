@@ -1876,6 +1876,12 @@ proc playMelody
 		out 42h, al ; Sending upper byte
 		
 		noteDuration:
+			mov ah, 1h
+			int 16h
+			jz KeyNotPressed
+			cmp ax, 011bh
+			je melodyEnd
+			KeyNotPressed:
 			call waitTick
 			loop noteDuration ; wait until the note is finished
 		
@@ -1908,6 +1914,12 @@ melodyEndHelp:
 			
 		
 	melodyEnd:
+	mov ah, 0
+	int 16h ; clears the keyboard buffer
+	
+	in al, 61h
+	and al, 11111100b
+	out 61h, al ; turn of speaker
 	
 	pop si
 	pop es
