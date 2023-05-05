@@ -216,6 +216,7 @@ Ystr db 00h
 String dw 0000h
 
 clock equ es:6Ch
+ticker dw 0000h
 
 Melody dw 0000h
 natrualNotesTable dw 2A5Fh, 25E4h, 2394h, 1FB4h, 1C3Fh, 1AA2h, 17C7h
@@ -229,6 +230,7 @@ drawMelody db "b$12 e$14 e$13 c11 d14 g02 g02 c14 b$13 a$11 b$14 e$02 e$02 f04 f
 enPassantMelody db "e$13 f13 b$12 f13 g13 b$21 g11 e$13 f13 b$14 ", 0
 promotionMelody db "c11 e11 g11 c21 e11 g11 c21 e21 g11 c21 e21 g21 c21 e21 g21 e21 c34 ", 0
 CheckMelody db "g#31 a$01 d04 ", 0
+
 
 CODESEG
 
@@ -1347,7 +1349,20 @@ proc config
 	ret
 endp config
 
-
+proc waitTick
+	push ax
+	
+	mov ax, 40h
+	mov es, ax
+	
+	mov ax, [clock]
+	waitTickLoop:
+		cmp ax, [clock]
+		je waitTickLoop
+	
+	pop ax
+	ret
+endp waitTick
 	
 proc selectTile
 	push ax
@@ -1808,15 +1823,9 @@ proc playMelody
 	push es
 	push si
 	
-	mov ax, 40h
-	mov es, ax
-	
 	mov si, [Melody]
 	
-	mov dx, [clock]
-	waitForFirstTick:
-		cmp dx, [clock]
-		je waitForFirstTick
+	call waitTick
 	
 	playMelodyLoop:
 	
@@ -1867,10 +1876,7 @@ proc playMelody
 		out 42h, al ; Sending upper byte
 		
 		noteDuration:
-			mov dx, [clock]
-			noteTick:
-				cmp dx, [clock]
-				je noteTick
+			call waitTick
 			loop noteDuration ; wait until the note is finished
 		
 		add si, 2
@@ -1879,10 +1885,7 @@ proc playMelody
 		and al, 11111100b
 		out 61h, al ; turn of speaker
 		
-		mov dx, [clock]
-		noteStop:
-			cmp dx, [clock]
-			je noteStop ; need seperation between notes
+		call waitTick ; need seperation between notes
 		
 		jmp playMelodyLoop
 		
@@ -1897,10 +1900,7 @@ melodyEndHelp:
 			shl cx, 2
 			
 			restDuration:
-				mov dx, [clock]
-				restTick:
-					cmp dx, [clock]
-					je restTick
+				call waitTick
 				loop restDuration ; wait until the rest is finished
 			
 			add si, 2
@@ -1923,12 +1923,6 @@ proc useMouse
 	push bx
 	push cx
 	push dx
-	
-	
-	mov ax, 4
-	mov cx, 0
-	mov dx, 0
-	int 33h ; reset mouse position to (0, 0)
 	
 	mov ax, 1
 	int 33h ; show mouse
@@ -1965,6 +1959,13 @@ proc useMouse
 	useMouseEnd:
 	mov [Xmouse], cx
 	mov [Ymouse], dx
+	
+	mousePressedLoop:
+		mov ax, 3
+		int 33h
+		shr cx, 1
+		cmp bl, 0
+		jne mousePressedLoop
 	
 	mov ax, 2
 	int 33h ; hide mouse
