@@ -1183,13 +1183,12 @@ proc doMove
 		jmp notPawnMove
 	
 		doEnPassant:
-			xor ah, 1
 			mov [Melody], offset enPassantMelody
 			mov bx, 0
 			shl ah, 4
 			add bl, ah
-			shr al, 3
-			add bl, al ; point bx to the pawn of the opposite color of the same file as the target tile
+			shr dl, 3
+			add bl, dl ; point bx to the pawn of the opposite color of the same file as the target tile
 			add bx, offset Wpawns
 			or [byte ptr bx], 40h ; eat that pawn
 			jmp doMoveEnd
@@ -1876,9 +1875,11 @@ proc playMelody
 		out 42h, al ; Sending upper byte
 		
 		noteDuration:
-			mov ah, 1h
+			mov ah, 1
 			int 16h
 			jz KeyNotPressed
+			mov ah, 0 ; there is a key in the buffer, read it and clear the buffer
+			int 16h
 			cmp ax, 011bh
 			je melodyEnd
 			KeyNotPressed:
@@ -1914,8 +1915,6 @@ melodyEndHelp:
 			
 		
 	melodyEnd:
-	mov ah, 0
-	int 16h ; clears the keyboard buffer
 	
 	in al, 61h
 	and al, 11111100b
