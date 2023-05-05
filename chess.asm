@@ -1139,17 +1139,37 @@ proc doMove
 	jne notPawnMoveHelp ; the piece is a promoted pawn
 	
 		; toggle [W/BmovedTwice]
-		mov bx, 0
+		xor ah, 1
 		mov bl, [piece]
+		mov bh, 0
+		add bx, offset Wpawns
+		mov cl, [bx]
+		shr cl, 3
+		mov ch, [targetTile]
+		shr ch, 3
+		cmp cl, ch
+		je notEnPassant ; the move is straight so it's not en passant
+		mov dl, [targetTile]
+		mov [tile], dl
+		call emptyTile
+		jz doEnPassant ; the move is to an empty squere so it's an en passant
+		
+		notEnPassant:
+		xor ah, 1
+		mov bl, [piece]
+		mov bh, 0
 		add bx, offset Wpawns
 		mov cl, [bx]
 		and cl, 7
 		mov ch, [targetTile]
 		and ch, 7
-		sub cl, ch
-		add cl, 2
-		and cl, 11b
-		jnz doEnPassant ; the move is not 2 steps so check if it's an en passan
+		sub ch, cl
+		cmp ch, 2
+		je DoubleMovePawn
+		cmp ch, -2
+		jne doMoveEndHelp
+		
+		DoubleMovePawn:
 		mov bx, offset WmovedTwice
 		shl ah, 3
 		add bl, ah
@@ -1161,21 +1181,7 @@ proc doMove
 		jmp notPawnMove
 	
 		doEnPassant:
-			mov bx, 0
-			mov bl, [piece]
-			add bx, offset Wpawns
-			mov cl, [bx]
-			shr cl, 3
-			mov ch, [targetTile]
-			shr ch, 3
-			cmp cl, ch
-			je doMoveEndHelp ; the move is not diagonal
-			shr ah, 3
 			xor ah, 1
-			mov al, [targetTile]
-			mov [tile], al
-			call emptyTile
-			jnz doMoveEndHelp ; move is just normal eating
 			mov [Melody], offset enPassantMelody
 			mov bx, 0
 			shl ah, 4
@@ -1183,7 +1189,7 @@ proc doMove
 			shr al, 3
 			add bl, al ; point bx to the pawn of the opposite color of the same file as the target tile
 			add bx, offset Wpawns
-			;or [byte ptr bx], 40h ; eat that pawn
+			or [byte ptr bx], 40h ; eat that pawn
 			jmp doMoveEnd
 			
 	notPawnMove:
