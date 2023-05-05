@@ -386,9 +386,7 @@ proc paintPiece
 	add bx, offset Wpawns
 	mov al, [bx]
 	
-	push ax
-	and al, 40h
-	pop ax
+	test al, 40h
 	jnz paintPieceHelp; the piece is eaten and so it won't be painted
 	
 	mov [tile], al
@@ -974,7 +972,7 @@ proc legalMove ; activates the zero flag if the move of [piece] to [tile] is leg
 	; al is the piece and ah is the color of the piece
 	
 	mov dl, [bx]
-	and dl, 40h
+	test dl, 40h
 	jnz legalMoveHelp ; if the piece is eaten then the move isn't legal
 	
 	mov cl, [bx]
@@ -1185,7 +1183,7 @@ proc doMove
 			shr al, 3
 			add bl, al ; point bx to the pawn of the opposite color of the same file as the target tile
 			add bx, offset Wpawns
-			or [byte ptr bx], 40h ; eat that pawn
+			;or [byte ptr bx], 40h ; eat that pawn
 			jmp doMoveEnd
 			
 	notPawnMove:
@@ -1252,7 +1250,7 @@ proc doMove
 		inc bx
 		loop doMoveLoop
 	jmp doMoveCon
-	; for each piece if its in the target tile, eat it
+	; for each piece, if its in the target tile, eat it
 	
 	eat:
 		or [byte ptr bx], 40h
