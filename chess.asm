@@ -860,8 +860,9 @@ proc LegalMoveKing
 	
 	bigCastle:
 		;check if big castle is legal
-		mov bx, offset WbigCastle
-		add bl, ah
+		mov bh, 0
+		mov bl, ah
+		add bx, offset WbigCastle
 		cmp [byte ptr bx], 0
 		jne isntLegalKingHelp ; rook or king moved
 		shl ah, 4
@@ -900,8 +901,9 @@ proc LegalMoveKing
 	
 	smallCastle:
 		;check if big castle is legal
-		mov bx, offset WsmallCastle
-		add bl, ah
+		mov bh, 0
+		mov bl, ah
+		add bx, offset WsmallCastle
 		cmp [byte ptr bx], 0
 		jne isntLegalKing ; rook or king moved
 		shl ah, 4
@@ -1217,10 +1219,14 @@ proc doMove
 	cmp al, 0Fh
 	jne doMoveEnd
 		; cant do castling at all after this move
-		mov [WsmallCastle], 1
-		mov [BsmallCastle], 1
-		mov [WbigCastle], 1
-		mov [BbigCastle], 1
+		mov bx, 0
+		mov bl, ah
+		add bx, offset WsmallCastle
+		mov [byte ptr bx], 1
+		mov bx, 0
+		mov bl, ah
+		add bx, offset WbigCastle
+		mov [byte ptr bx], 1
 		mov bx, 0
 		mov bl, [piece]
 		add bx, offset Wpawns
@@ -1821,6 +1827,13 @@ proc playMelody
 	push dx
 	push es
 	push si
+	
+	mov ah, 1
+	int 16h
+	jz bufferClear
+	mov ah, 0 ; clears the keyboard buffer
+	int 16h
+	bufferClear:
 	
 	mov si, [Melody]
 	
