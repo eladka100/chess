@@ -403,7 +403,8 @@ proc paintPiece
 		shr al, 1
 		add bl, al
 		add bx, offset Wpromotions ; go to the correct pawn to view its promotion
-		mov ax, [bx]
+		mov al, [bx]
+		mov ah, 0
 		shl ax, 1
 		add si, ax
 		mov si, [si] ; go to the correct sprite
