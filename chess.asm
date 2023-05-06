@@ -1142,7 +1142,6 @@ proc doMove
 	cmp [byte ptr bx], 0
 	jne notPawnMoveHelp ; the piece is a promoted pawn
 	
-		; toggle [W/BmovedTwice]
 		xor ah, 1
 		mov bl, [piece]
 		mov bh, 0
@@ -2003,63 +2002,64 @@ endp useMouse
 
 
 start:
-	mov ax, @data
-	mov ds, ax
+	mov ax, @data  
+	mov ds, ax ; calibrating the data segment
 	
-	call config
-	call showGame
-	mov ah, 0
+	call config ; enables mouse and changes to graphic mode
+	call showGame ; shows the initial position
+	mov ah, 0 ; the white starts
 	mov [Melody], offset startMelody
-	call playMelody
+	call playMelody ; play the starting melody
 	
 	mainLoop:
 		call checkmate
-		jz someoneWon
+		jz someoneWon ; if the player is in checkmate then someone won
 		call stalemate
-		jz draw
-		call turn
+		jz draw ; if the player is in stalemate then draw
+		call turn ; the player does the turn
 		
-		; check if a button if pressed
+		; checks if a button if pressed and jumps accordingly
 		cmp [isDraw], 1
 		je draw
 		cmp [isResign], 1
 		je someoneWon 
 		
-		xor ah, 1
+		xor ah, 1 ; changes the turn
+		; if the player is in check plays the check music
 		call inCheck
 		jnz notInCheck
 			mov [Melody], offset CheckMelody
 			call playMelody
 		notInCheck:
-		jmp mainLoop
+		jmp mainLoop ; again
 		
-	someoneWon:
-		mov [Melody], offset winningMelody
-		cmp ah, 0
+	someoneWon: ; when somewon wins
+		mov [Melody], offset winningMelody ; the ending melody is the winning melody
+		cmp ah, 0 ; checks which player won 
 		je blackWins
-		whiteWins:
+		whiteWins: ; if white wins
 			mov [Xstr], 14
 			mov [Ystr], 2
-			mov [String], offset WwinStr
-			call printStr
-			jmp exit
-		blackWins:
+			mov [String], offset WwinStr 
+			call printStr ; displays "white wins!" above the board
+			jmp exit 
+		blackWins: ; if black wins
 			mov [Xstr], 14
 			mov [Ystr], 2
-			mov [String], offset BwinStr
-			call printStr
-			jmp exit
+			mov [String], offset BwinStr 
+			call printStr ; displays "white wins!" above the board
+			jmp exit ; game ended
 			
-	draw:
+	draw: ; when its draw
 		mov [Xstr], 18
 		mov [Ystr], 2
 		mov [String], offset drawStr
-		call printStr
-		mov [Melody], offset drawMelody
+		call printStr ; displays "draw" above the board
+		mov [Melody], offset drawMelody ; the ending melody is the draw melody
 	
 	exit:
-	call playMelody
-	call gameEnd
+	call playMelody ; plays the ending melody
+	call gameEnd ; waits until the player presses a button
 	mov ax, 4c00h
-	int 21h;
+	int 21h ; exits the program
 END start
