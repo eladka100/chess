@@ -1133,7 +1133,7 @@ proc doMove
 	and al, 0Fh ; al is the piece itself
 	shr ah, 4 ; ah is the color of the piece
 	cmp al, 8
-	jae notPawnMoveHelp
+	jae notPawnMoveHelp ; the piece is not a pawn
 	mov bl, ah
 	shl bl, 3
 	mov bh, 0
@@ -1150,11 +1150,11 @@ proc doMove
 		shr cl, 3
 		mov ch, [targetTile]
 		shr ch, 3
-		cmp cl, ch
+		cmp cl, ch ; compares the file of the piece to the file of the target file
 		je notEnPassant ; the move is straight so it's not en passant
 		mov dl, [targetTile]
 		mov [tile], dl
-		call emptyTile
+		call emptyTile 
 		jz doEnPassant ; the move is to an empty squere so it's an en passant
 		
 		notEnPassant:
@@ -1168,36 +1168,37 @@ proc doMove
 		and ch, 7
 		sub ch, cl
 		cmp ch, 2
-		je DoubleMovePawn
+		je DoubleMovePawn ; the move is two tiles
 		cmp ch, -2
-		jne doMoveEndHelp
+		jne doMoveEndHelp ; the move is not two tiles
 		
-		DoubleMovePawn:
+		DoubleMovePawn: ; if the move is two tile
 		mov bx, offset WmovedTwice
 		shl ah, 3
 		add bl, ah
 		add bl, al
-		mov [byte ptr bx], 1
+		mov [byte ptr bx], 1 ; updates the moveTwice for the pawn
 		jmp doMoveEnd
 		
-	notPawnMoveHelp:
+	notPawnMoveHelp: ; the jump is too far
 		jmp notPawnMove
 	
-		doEnPassant:
-			mov [Melody], offset enPassantMelody
+		doEnPassant: ; if the move is an en passant
+			mov [Melody], offset enPassantMelody ; the melody for this move is the en passant melody
 			mov bx, 0
 			shl ah, 4
 			add bl, ah
 			shr dl, 3
-			add bl, dl ; point bx to the pawn of the opposite color of the same file as the target tile
-			add bx, offset Wpawns
+			add bl, dl 
+			add bx, offset Wpawns; point bx to the pawn of the opposite color of the same file as the target tile
 			or [byte ptr bx], 40h ; eat that pawn
-			jmp doMoveEnd
+			jmp doMoveEnd ; continue
 			
 	notPawnMove:
-	cmp al, 0Ah
-	jae notRookMove
-		cmp al, 8
+	cmp al, 0Ah ; checks if it's a rook
+	jae notRookMove ; its not a rook
+	; if it's a rook
+		cmp al, 8 ; check which rook is it
 		je moveLeftRook
 			; cant do small castling
 			mov bx, offset WsmallCastle
@@ -1212,20 +1213,19 @@ proc doMove
 			jmp doMoveEnd
 	
 	doMoveEndHelp:
-		jmp doMoveEnd
+		jmp doMoveEnd ; jump is too far
 	
 	notRookMove:
-	cmp al, 0Fh
-	jne doMoveEnd
-		; cant do castling at all after this move
+	cmp al, 0Fh ; checks if its a king move
+	jne doMoveEnd ; it isnt a king move
 		mov bx, 0
 		mov bl, ah
 		add bx, offset WsmallCastle
-		mov [byte ptr bx], 1
+		mov [byte ptr bx], 1 
 		mov bx, 0
 		mov bl, ah
 		add bx, offset WbigCastle
-		mov [byte ptr bx], 1
+		mov [byte ptr bx], 1 ; cant do castling at all after this move
 		mov bx, 0
 		mov bl, [piece]
 		add bx, offset Wpawns
@@ -1234,39 +1234,38 @@ proc doMove
 		mov ch, [targetTile]
 		shr ch, 3
 		sub cl, ch
-		cmp cl, 2
-		je doBigCastling
+		cmp cl, 2 
+		je doBigCastling ; the move is 2 tiles to the left
 		cmp cl, -2
-		je doSmallCastling
-		jmp doMoveEnd
+		je doSmallCastling ; the move is 2 tiles to the right
+		jmp doMoveEnd ; just a normal move
 		
-		doBigCastling:
+		doBigCastling: ; does the big castling
 			mov bx, offset Wrooks
 			shl ah, 4
 			add bl, ah
-			add [byte ptr bx], 18h
+			add [byte ptr bx], 18h ; moves the rook correctly
 			jmp doMoveEnd
 		doSmallCastling:
 			mov bx, offset Wrooks+1
 			shl ah, 4
-			add bl, ah
-			sub [byte ptr bx], 10h		
+			add bl, ah 
+			sub [byte ptr bx], 10h ; moves the rook correctly		
 		
 	doMoveEnd:
 	mov bx, offset Wpawns
 	mov cx, 32
-	doMoveLoop:
+	doMoveLoop: ; loops through every piece
 		mov al, [bx]
-		cmp al, [targetTile]
-		je eat
+		cmp al, [targetTile] ; checks if the piece is in the targeted tile
+		je eat ; if yes then eat it
 		inc bx
-		loop doMoveLoop
-	jmp doMoveCon
-	; for each piece, if its in the target tile, eat it
+		loop doMoveLoop ; continue the loop
+	jmp doMoveCon ; no piece was eaten
 	
 	eat:
-		or [byte ptr bx], 40h
-		mov [Melody], offset eatMelody
+		or [byte ptr bx], 40h ; eats the piece
+		mov [Melody], offset eatMelody ; the melody for this move is the eating melody
 	
 	doMoveCon:
 	mov bx, 0
