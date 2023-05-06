@@ -2032,10 +2032,7 @@ start:
 			call playMelody
 		notInCheck:
 		jmp mainLoop
-	
-	drawHelp:
-		jmp draw
-	
+		
 	someoneWon:
 		mov [Melody], offset winningMelody
 		cmp ah, 0
